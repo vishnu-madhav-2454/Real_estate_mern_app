@@ -1,10 +1,52 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { updateUserStart,updateUserSuccess,updateUserFailure } from "../redux/user/user.slice";
+
 
 // Purely design-focused profile page (red/black/white)
 export default function Profile() {
-  const { currentUser } = useSelector((state) => state.user);
+  const { currentUser,loading } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+  const [formData, setFormData] = useState({
+    username: currentUser.username,
+    email: currentUser.email,
+    password: "",
+  });
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      dispatch(updateUserStart());
+      // Simulate an API call to update user profile
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if(data.sucess === false) {
+        dispatch(updateUserFailure(data.message));
+        return;
+      }
+      dispatch(updateUserSuccess(data));
+      alert("Profile updated successfully!");
+    }
+    catch (err) {
+      dispatch(updateUserFailure(err.message));
+      console.log(err);
+    }
+  };
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Decorative background accents */}
@@ -39,7 +81,7 @@ export default function Profile() {
             </div>
 
             {/* Right: Form */}
-            <form className="p-6">
+            <form className="p-6" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-5">
                 {/* Username */}
                 <div>
@@ -48,6 +90,7 @@ export default function Profile() {
                     type="text"
                     placeholder={currentUser.username}
                     className="w-full rounded-xl border border-black/20 bg-white px-4 py-2.5 text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    onchange = {handleChange}
                   />
                 </div>
 
@@ -58,6 +101,7 @@ export default function Profile() {
                     type="email"
                     placeholder={currentUser.email}
                     className="w-full rounded-xl border border-black/20 bg-white px-4 py-2.5 text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    onChange={handleChange}
                   />
                 </div>
                 {/* Password */}
@@ -67,6 +111,7 @@ export default function Profile() {
                     type="password"
                     placeholder="••••••••"
                     className="w-full rounded-xl border border-black/20 bg-white px-4 py-2.5 text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    onchange={handleChange}
                   />
                 </div>
 
@@ -79,7 +124,7 @@ export default function Profile() {
                     type="submit"
                     className="flex-1 rounded-xl px-5 py-2.5 font-semibold bg-red-500 text-white shadow hover:brightness-95"
                   >
-                    Update Profile
+                    {loading ? 'Loading' : 'Update'}
                   </button>
                   <button
                     type="button"
