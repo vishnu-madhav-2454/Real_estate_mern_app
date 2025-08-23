@@ -1,5 +1,5 @@
 import { createSlice, current } from "@reduxjs/toolkit";
-import { sign } from "jsonwebtoken";
+
 const initialState = {
     currentUser: null,
     error: null,

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {useDispatch} from 'react-redux';
 import { signInStart,signInFailure, signInSuccess } from "../redux/user/user.slice";
 import { useSelector } from "react-redux";
+import OAuth from "../components/Oauth";
 
 
 const Signin = () => {
@@ -81,6 +82,7 @@ const Signin = () => {
           >
             {loading ? "Loading..." : "Signin"}
           </button>
+          <OAuth/>
         </form>
 
         <div className="mt-5">
