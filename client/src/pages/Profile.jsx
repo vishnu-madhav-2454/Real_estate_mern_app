@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { updateUserStart,updateUserSuccess,updateUserFailure } from "../redux/user/user.slice";
+import { updateUserStart,updateUserSuccess,updateUserFailure,deleteUserStart,deleteUserSuccess,deleteUserFailure } from "../redux/user/user.slice";
 
 
 // Purely design-focused profile page (red/black/white)
@@ -47,6 +47,30 @@ export default function Profile() {
       console.log(err);
     }
   };
+
+
+  const handleDeleteAccount = async () => {
+    try{
+      dispatch(deleteUserStart());
+      // Simulate an API call to delete user account
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if(data.sucess === false) {
+        dispatch(deleteUserFailure(data.message));
+        return;
+      }
+      dispatch(deleteUserSuccess());
+      alert("Account deleted successfully!");
+      // Optionally, redirect to homepage or login page
+      window.location.href = "/";
+    }
+    catch(err){
+      dispatch(deleteUserFailure(err.message));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Decorative background accents */}
@@ -135,6 +159,7 @@ export default function Profile() {
                   <button
                     type="button"
                     className="flex-1 rounded-xl px-5 py-2.5 font-semibold border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition"
+                    onClick={handleDeleteAccount}
                   >
                     Delete Account
                   </button>
