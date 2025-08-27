@@ -3,12 +3,19 @@ import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { updateUserStart,updateUserSuccess,updateUserFailure,deleteUserStart,deleteUserSuccess,deleteUserFailure } from "../redux/user/user.slice";
-
+import {
+  updateUserStart,
+  updateUserSuccess,
+  updateUserFailure,
+  deleteUserStart,
+  deleteUserSuccess,
+  deleteUserFailure,
+} from "../redux/user/user.slice";
+import { Link } from "react-router-dom";
 
 // Purely design-focused profile page (red/black/white)
 export default function Profile() {
-  const { currentUser,loading } = useSelector((state) => state.user);
+  const { currentUser, loading } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     username: currentUser.username,
@@ -35,29 +42,27 @@ export default function Profile() {
         body: JSON.stringify(formData),
       });
       const data = await res.json();
-      if(data.sucess === false) {
+      if (data.sucess === false) {
         dispatch(updateUserFailure(data.message));
         return;
       }
       dispatch(updateUserSuccess(data));
       alert("Profile updated successfully!");
-    }
-    catch (err) {
+    } catch (err) {
       dispatch(updateUserFailure(err.message));
       console.log(err);
     }
   };
 
-
   const handleDeleteAccount = async () => {
-    try{
+    try {
       dispatch(deleteUserStart());
       // Simulate an API call to delete user account
       const res = await fetch(`/api/user/delete/${currentUser._id}`, {
         method: "DELETE",
       });
       const data = await res.json();
-      if(data.sucess === false) {
+      if (data.sucess === false) {
         dispatch(deleteUserFailure(data.message));
         return;
       }
@@ -65,9 +70,24 @@ export default function Profile() {
       alert("Account deleted successfully!");
       // Optionally, redirect to homepage or login page
       window.location.href = "/";
-    }
-    catch(err){
+    } catch (err) {
       dispatch(deleteUserFailure(err.message));
+    }
+  };
+
+  const Handlesignout = async () => {
+    try {
+      await fetch("/api/auth/signout", {
+        method: "GET",
+        credentials: "include", // Include cookies
+      });
+
+      // Clear user state in Redux
+      dispatch(deleteUserSuccess());
+      // Redirect to homepage or login page
+      window.location.href = "/";
+    } catch (err) {
+      console.log(err);
     }
   };
 
@@ -87,7 +107,9 @@ export default function Profile() {
       >
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-extrabold tracking-tight text-black">Profile</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-black">
+            Profile
+          </h1>
         </div>
 
         {/* Card */}
@@ -98,7 +120,11 @@ export default function Profile() {
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
                   <div className="h-32 w-32 rounded-full overflow-hidden bg-black ring-4 ring-red-500/20 select-none">
-                    <img src={currentUser.photo} alt="profile" className="h-full w-full object-cover" />
+                    <img
+                      src={currentUser.photo}
+                      alt="profile"
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                 </div>
               </div>
@@ -109,18 +135,22 @@ export default function Profile() {
               <div className="grid grid-cols-1 gap-5">
                 {/* Username */}
                 <div>
-                  <label className="block text-sm font-semibold text-black mb-1">Username</label>
+                  <label className="block text-sm font-semibold text-black mb-1">
+                    Username
+                  </label>
                   <input
                     type="text"
                     placeholder={currentUser.username}
                     className="w-full rounded-xl border border-black/20 bg-white px-4 py-2.5 text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    onchange = {handleChange}
+                    onchange={handleChange}
                   />
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-semibold text-black mb-1">Email</label>
+                  <label className="block text-sm font-semibold text-black mb-1">
+                    Email
+                  </label>
                   <input
                     type="email"
                     placeholder={currentUser.email}
@@ -130,7 +160,9 @@ export default function Profile() {
                 </div>
                 {/* Password */}
                 <div>
-                  <label className="block text-sm font-semibold text-black mb-1">Password</label>
+                  <label className="block text-sm font-semibold text-black mb-1">
+                    Password
+                  </label>
                   <input
                     type="password"
                     placeholder="••••••••"
@@ -148,11 +180,12 @@ export default function Profile() {
                     type="submit"
                     className="flex-1 rounded-xl px-5 py-2.5 font-semibold bg-red-500 text-white shadow hover:brightness-95"
                   >
-                    {loading ? 'Loading' : 'Update'}
+                    {loading ? "Loading" : "Update"}
                   </button>
                   <button
                     type="button"
                     className="flex-1 rounded-xl px-5 py-2.5 font-semibold border border-black hover:bg-black hover:text-white transition"
+                    onClick={Handlesignout}
                   >
                     Sign Out
                   </button>
@@ -163,6 +196,12 @@ export default function Profile() {
                   >
                     Delete Account
                   </button>
+                  <Link
+                    to="/create-listing"
+                    className="flex-1 rounded-xl px-5 py-2.5 font-semibold border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition text-center"
+                  >
+                    Create Listing
+                  </Link>
                 </div>
               </div>
             </form>
