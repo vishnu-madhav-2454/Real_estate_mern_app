@@ -108,6 +108,25 @@ export default function Profile() {
     }
   };
 
+  const handleDeleteListing = async (id) => {
+    try {
+      const res = await fetch(`/api/listing/delete/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.sucess === false) {
+        console.log(data.message);
+        return;
+      }
+      alert("Listing deleted successfully!");
+      window.location.reload();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  
+
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Decorative background accents */}
@@ -253,17 +272,26 @@ export default function Profile() {
                 <Link to={`/listing/${listing._id}`}>
                   <img
                     src={listing.imageUrls[0]}
-                    alt={listing.title}
+                    alt={listing.name}
                     className="w-full h-48 object-cover rounded-lg"
                   />
                 </Link>
                 <div className="flex flex-col gap-1">
-                  <h3 className="text-lg font-semibold">{listing.title}</h3>
+                  <h3 className="text-lg font-semibold">{listing.name}</h3>
                   <p className="text-sm text-gray-500">{listing.description}</p>
                 </div>
                 <div className="flex items-center justify-between">
-                  <button className="text-red-500 hover:text-red-600">Delete</button>
-                  <button className="text-blue-500 hover:text-blue-600">Edit</button>
+                  <button
+                    onClick={() => handleDeleteListing(listing._id)}
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    Delete
+                  </button>
+                  <Link to={`/update-listing/${listing._id}`}>
+                    <button className="text-blue-500 hover:text-blue-600">
+                      Edit
+                    </button>
+                  </Link>
                 </div>
               </div>
             ))}
