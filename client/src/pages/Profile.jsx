@@ -1,8 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { useSelector } from "react-redux";
-import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import {
   updateUserStart,
   updateUserSuccess,
@@ -17,11 +15,15 @@ import { Link } from "react-router-dom";
 export default function Profile() {
   const { currentUser, loading } = useSelector((state) => state.user);
   const dispatch = useDispatch();
+
   const [formData, setFormData] = useState({
     username: currentUser.username,
     email: currentUser.email,
     password: "",
   });
+  const [showlistingserror, setShowlistingserror] = useState(false);
+  const [listings, setListings] = useState([]);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -33,7 +35,6 @@ export default function Profile() {
     e.preventDefault();
     try {
       dispatch(updateUserStart());
-      // Simulate an API call to update user profile
       const res = await fetch(`/api/user/update/${currentUser._id}`, {
         method: "POST",
         headers: {
@@ -57,7 +58,6 @@ export default function Profile() {
   const handleDeleteAccount = async () => {
     try {
       dispatch(deleteUserStart());
-      // Simulate an API call to delete user account
       const res = await fetch(`/api/user/delete/${currentUser._id}`, {
         method: "DELETE",
       });
@@ -68,7 +68,6 @@ export default function Profile() {
       }
       dispatch(deleteUserSuccess());
       alert("Account deleted successfully!");
-      // Optionally, redirect to homepage or login page
       window.location.href = "/";
     } catch (err) {
       dispatch(deleteUserFailure(err.message));
@@ -79,15 +78,33 @@ export default function Profile() {
     try {
       await fetch("/api/auth/signout", {
         method: "GET",
-        credentials: "include", // Include cookies
+        credentials: "include",
       });
-
-      // Clear user state in Redux
       dispatch(deleteUserSuccess());
-      // Redirect to homepage or login page
       window.location.href = "/";
     } catch (err) {
       console.log(err);
+    }
+  };
+
+  const handleShowListings = async () => {
+    try {
+      const res = await fetch(`/api/user/listings/${currentUser._id}`, {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.sucess === false) {
+        console.log(data.message);
+        setShowlistingserror(true);
+        return;
+      }
+      console.log(data.listings);
+      setListings(data.listings);
+      setShowlistingserror(false);
+    } catch (error) {
+      console.log(error);
+      setShowlistingserror(true);
     }
   };
 
@@ -140,9 +157,10 @@ export default function Profile() {
                   </label>
                   <input
                     type="text"
+                    name="username"
                     placeholder={currentUser.username}
                     className="w-full rounded-xl border border-black/20 bg-white px-4 py-2.5 text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    onchange={handleChange}
+                    onChange={handleChange}
                   />
                 </div>
 
@@ -153,11 +171,13 @@ export default function Profile() {
                   </label>
                   <input
                     type="email"
+                    name="email"
                     placeholder={currentUser.email}
                     className="w-full rounded-xl border border-black/20 bg-white px-4 py-2.5 text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-red-500"
                     onChange={handleChange}
                   />
                 </div>
+
                 {/* Password */}
                 <div>
                   <label className="block text-sm font-semibold text-black mb-1">
@@ -165,9 +185,10 @@ export default function Profile() {
                   </label>
                   <input
                     type="password"
+                    name="password"
                     placeholder="••••••••"
                     className="w-full rounded-xl border border-black/20 bg-white px-4 py-2.5 text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    onchange={handleChange}
+                    onChange={handleChange}
                   />
                 </div>
 
@@ -208,6 +229,47 @@ export default function Profile() {
           </div>
         </div>
       </motion.div>
+
+      {/* Show Listings Button */}
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        <button
+          onClick={handleShowListings}
+          className="w-full rounded-xl px-5 py-2.5 font-semibold border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition text-center"
+        >
+          Show Listings
+        </button>
+
+        {showlistingserror && (
+          <p className="text-red-500 mt-2">Error showing listings</p>
+        )}
+
+        {listings.length > 0 && (
+          <div className="flex flex-col gap-4 mt-4">
+            {listings.map((listing) => (
+              <div
+                key={listing._id}
+                className="flex flex-col gap-2 border rounded-xl p-3"
+              >
+                <Link to={`/listing/${listing._id}`}>
+                  <img
+                    src={listing.imageUrls[0]}
+                    alt={listing.title}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                </Link>
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-lg font-semibold">{listing.title}</h3>
+                  <p className="text-sm text-gray-500">{listing.description}</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <button className="text-red-500 hover:text-red-600">Delete</button>
+                  <button className="text-blue-500 hover:text-blue-600">Edit</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
