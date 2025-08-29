@@ -8,6 +8,7 @@ import Profile from './pages/Profile'
 import Header from './components/Header'
 import CreateListing from './pages/CreateListing'
 import UpdateListing from './pages/UpdateListing'
+import Listing from './pages/Listing'
 
 const App = () => {
   return <BrowserRouter>
@@ -20,6 +21,7 @@ const App = () => {
       <Route path="/profile" element={<Profile/>} />
       <Route path="/create-listing" element={<CreateListing/>} />
       <Route path="/update-listing/:id" element={<UpdateListing/>} />
+      <Route path="/listing/:id" element={<Listing/>} />
     </Routes>
   </BrowserRouter>
 }

@@ -292,6 +292,11 @@ export default function Profile() {
                       Edit
                     </button>
                   </Link>
+                  <Link to={`/listing/${listing._id}`}>
+                    <button className="text-green-500 hover:text-green-600">
+                      View
+                    </button>
+                  </Link>
                 </div>
               </div>
             ))}

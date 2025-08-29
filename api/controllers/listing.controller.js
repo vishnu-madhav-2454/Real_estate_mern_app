@@ -16,8 +16,8 @@ export const createlisting = async(req, res,next) => {
 export const getListing = async(req, res,next) => {
     try{
         const userId = req.params.id;
-        const listings = await Listing.find({userId});
-        return res.status(200).json(listings);
+        const listings = await Listing.find({_id : userId});
+        return res.status(200).json({listings,sucess:true});
     }
     catch(error){
         next(error);
