@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
+
 import {
   FaBed,
   FaBath,
@@ -18,7 +21,11 @@ const Listing = () => {
   const [error, setError] = useState(null);
   const { id } = useParams();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showContact, setShowContact] = useState(false);
   const autoPlayRef = useRef(null);
+  const { currentUser } = useSelector((state) => state.user);
+  const [userDetails, setUserDetails] = useState(null);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -52,12 +59,33 @@ const Listing = () => {
   useEffect(() => {
     if (!listing?.imageUrls || listing.imageUrls.length < 2) return;
     autoPlayRef.current = setInterval(() => {
-      setCurrentSlide((prev) => ((prev + 1) % listing.imageUrls.length));
+      setCurrentSlide((prev) => (prev + 1) % listing.imageUrls.length);
     }, 5000);
     return () => {
       if (autoPlayRef.current) clearInterval(autoPlayRef.current);
     };
   }, [listing]);
+
+  // fetch owner details when listing.userRef changes
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const res = await fetch(`/api/user/${listing.userRef}`);
+        const data = await res.json();
+        if (!res.ok || data.success === false) {
+          setError(data.message || "Failed to load user details");
+        } else {
+          setUserDetails(data);
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+
+    if (listing && listing.userRef) {
+      fetchUserDetails();
+    }
+  }, [listing?.userRef]);
 
   if (loading) {
     return (
@@ -139,7 +167,7 @@ const Listing = () => {
             <div className="md:col-span-2 space-y-8">
               <div>
                 <h1 className="text-4xl font-bold text-red-600 tracking-tight mb-2 flex items-center gap-2">
-                  <FaHome /> {listing.name}
+                  {listing.name}
                 </h1>
                 <p className="text-lg text-gray-600 flex items-center gap-2">
                   <FaTag /> {listing.address}
@@ -179,20 +207,42 @@ const Listing = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 {[
                   { label: "Type", value: listing.type, icon: <FaHome /> },
-                  { label: "Bedrooms", value: listing.bedrooms, icon: <FaBed /> },
-                  { label: "Bathrooms", value: listing.bathrooms, icon: <FaBath /> },
-                  { label: "Furnished", value: listing.furnished ? "Yes" : "No", icon: <FaCouch /> },
-                  { label: "Parking", value: listing.parking ? "Yes" : "No", icon: <FaParking /> },
-                  { label: "Offer", value: listing.offer ? "Yes" : "No", icon: <FaTag /> },
+                  {
+                    label: "Bedrooms",
+                    value: listing.bedrooms,
+                    icon: <FaBed />,
+                  },
+                  {
+                    label: "Bathrooms",
+                    value: listing.bathrooms,
+                    icon: <FaBath />,
+                  },
+                  {
+                    label: "Furnished",
+                    value: listing.furnished ? "Yes" : "No",
+                    icon: <FaCouch />,
+                  },
+                  {
+                    label: "Parking",
+                    value: listing.parking ? "Yes" : "No",
+                    icon: <FaParking />,
+                  },
+                  {
+                    label: "Offer",
+                    value: listing.offer ? "Yes" : "No",
+                    icon: <FaTag />,
+                  },
                 ].map((feature, idx) => (
                   <div
                     key={idx}
                     className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition-transform duration-300 hover:scale-105 hover:shadow-md"
                   >
-                    <span className="block text-gray-500 text-sm mb-1 flex items-center gap-1">
+                    <span className=" text-gray-500 text-sm mb-1 flex items-center gap-1">
                       {feature.icon} {feature.label}
                     </span>
-                    <span className="font-semibold text-lg">{feature.value}</span>
+                    <span className="font-semibold text-lg">
+                      {feature.value}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -208,20 +258,73 @@ const Listing = () => {
                     <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
                       <FaTag /> Regular Price
                     </p>
-                    <p className="text-3xl font-bold text-gray-900">₹{listing.regularPrice}</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      ₹{listing.regularPrice}
+                    </p>
                   </div>
                   {listing.discountedPrice && (
                     <div>
                       <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
                         <FaTag /> Discounted Price
                       </p>
-                      <p className="text-3xl font-bold text-green-600">₹{listing.discountedPrice}</p>
+                      <p className="text-3xl font-bold text-green-600">
+                        ₹{listing.discountedPrice}
+                      </p>
                     </div>
                   )}
                 </div>
-                <button className="w-full bg-red-600 text-white py-3.5 rounded-lg font-semibold text-lg hover:bg-red-700 transition-all duration-300 hover:shadow-lg mt-8 flex items-center justify-center gap-2">
-                  <FaPhoneAlt /> Contact Owner
-                </button>
+
+                {/* Contact button logic */}
+                {currentUser &&
+                  listing.userRef !== currentUser._id &&
+                  !showContact && (
+                    <button
+                      onClick={() => setShowContact(true)}
+                      className="w-full bg-red-600 text-white py-3.5 rounded-lg font-semibold text-lg hover:bg-red-700 transition-all duration-300 hover:shadow-lg mt-8 flex items-center justify-center gap-2"
+                    >
+                      <FaPhoneAlt /> Contact Owner
+                    </button>
+                  )}
+
+                {showContact && (
+                  <div className="mt-8 bg-gray-50 border border-gray-200 rounded-xl p-5 shadow-sm">
+                    <h3 className="text-xl font-semibold text-red-600 flex items-center gap-2 mb-4">
+                      <FaPhoneAlt className="text-red-500" /> Owner's Contact
+                    </h3>
+                    {userDetails ? (
+                      <div className="space-y-3 flex flex-col overflow-auto">
+                        <div>
+                          <p className="text-sm text-gray-500">Name</p>
+                          <p className="font-medium text-gray-900">
+                            {userDetails.username}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Email</p>
+                          <p className="font-medium text-gray-900">
+                            {userDetails.email}
+                          </p>
+                          <textarea name="message" id="message" rows="2" className="w-full mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Write your message here...">
+                            {`Hello ${userDetails.username}, I am interested in your property listing: ${listing.name}. Please contact me at your earliest convenience.`}
+                          </textarea>
+                          <Link to={`mailto:${userDetails.email}?subject=Inquiry about your property listing: ${listing.name}&body=${encodeURIComponent(message)}`} className="mt-3 inline-block w-full text-center bg-red-600 text-white py-2 rounded-lg font-semibold text-lg hover:bg-red-700 transition-all duration-300 hover:shadow-lg">
+                            Send Email
+                          </Link>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">
+                        Loading contact details...
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {!currentUser && (
+                  <p className="mt-6 text-sm text-gray-500">
+                    Please log in to see the owner's contact information.
+                  </p>
+                )}
               </div>
             </div>
           </div>
